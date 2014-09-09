@@ -13,6 +13,7 @@ BASE_PATH = os.path.abspath(os.path.dirname(__file__))
 if BASE_PATH not in sys.path:
     sys.path += [BASE_PATH] + [join(BASE_PATH, 'sublimeibus')]
 
+
 from sublimeibus.host import agent
 
 
@@ -37,6 +38,7 @@ class IBusStatus(object):
         self.enable = False
         self.view = None
         self._id_no = -1
+        self.input= True
 
     def id_no():
         def fget(self):
@@ -61,7 +63,6 @@ class IBusStatus(object):
             view.set_status('ibus_mode', 'iBus: ' + engine_name)
         else:
             view.erase_status('ibus_mode')
-
 
 class IBusCommand(object):
     def __init__(self, agent):
@@ -89,6 +90,14 @@ class IBusCommand(object):
             self.push('disable(%d)' % status.id_no)
 
     def process_key(self, keysym):
+        
+        # set self.input to true if a char is typed
+        print 'in process_key',status.id_no, keysym
+        if keysym in range(65,91)+range(97,123):
+        # if keysym<127:
+            status.input=True
+        else:
+            status.input=False
         self.push('process_key_event(%d, %d, 0, None, None)' %
                   (status.id_no, keysym))
         # self.push('set_surrounding_text(%d, "", 0, 0)' % status.id_no)
@@ -335,17 +344,37 @@ class IBusCallback(object):
         if status.view is not None:
             status.view.run_command('ibus_insert', {"text": text})
             command.set_cursor_location()
+            status.input= False
 
     def ibus_hide_preedit_text_cb(self, id_no):
         pass
 
     def ibus_process_key_event_cb(self, id_no, handled):
+        
+        # handled=0
+        print 'in ibus_process_key_event_cb',id_no,handled
+        # here if the ibus window is not visible, # and we typled arrow or del keys, we set handled to 0
+        # settings = sublime.load_settings('SublimeIBusFallBackCommand.sublime-settings')
+        # cmd = settings.get(status.key)
+        print 'command:',command
+        print 'window id:', command.window_layout.window_id
+        print 'visible:',command.window_layout.view
+        print 'status.input:',status.input
+        print 'status.key:',status.key
+        
+        if not status.input and status.key in range(65,91)+range(97,123):
+            print 'my hack is on'
+            handled =0
+        
         if handled == 0:
             settings = sublime.load_settings('SublimeIBusFallBackCommand.sublime-settings')
             cmd = settings.get(status.key)
             if cmd is not None:
                 status.view.run_command(cmd.get('command', None),
                                         cmd.get('args', None))
+                print 'handled==0, cmd is not non'
+                print 'cmd',cmd,'|',cmd.get('command'),'|',cmd.get('args')
+                 
             elif len(status.key) == 1:
                 self.ibus_commit_text_cb(id_no, status.key)
 

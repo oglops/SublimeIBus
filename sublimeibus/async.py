@@ -130,6 +130,7 @@ class ProcessChat(object):
 
     def send(self, data):
         if self.async is not None:
+            # print 'in Prcess Chat', data.encode('utf-8')
             return self.async.proc.stdin.write(data.encode('utf-8'))
         else:
             raise

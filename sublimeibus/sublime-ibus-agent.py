@@ -320,6 +320,7 @@ class IBusELInputContext(ibus.InputContext):
 ########################################################################
 
 def commit_text_cb(ic, text):
+    print('yeah')
     print_command('ibus_commit_text_cb',
         ic.id_no, text.text.encode("utf-8"))
 
