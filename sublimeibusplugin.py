@@ -39,6 +39,9 @@ class IBusStatus(object):
         self.view = None
         self._id_no = -1
         self.input= True
+        self.input_key = range(65,91)+range(97,123)
+        self.nav_key = ["home","left","up","right","down"]
+        self.edit_key = ["enter","backspace","tab","linefeed","clear","return","pause","escape","delete"]
 
     def id_no():
         def fget(self):
@@ -93,11 +96,13 @@ class IBusCommand(object):
         
         # set self.input to true if a char is typed
         print 'in process_key',status.id_no, keysym
-        if keysym in range(65,91)+range(97,123):
+        if keysym in status.input_key:
         # if keysym<127:
             status.input=True
-        else:
+        elif keysym in range(49,54)+[32]+[65293,65290]:
             status.input=False
+        
+        
         self.push('process_key_event(%d, %d, 0, None, None)' %
                   (status.id_no, keysym))
         # self.push('set_surrounding_text(%d, "", 0, 0)' % status.id_no)
@@ -338,12 +343,15 @@ class IBusCallback(object):
         pass
 
     def ibus_update_preedit_text_cb(self, id_no, text, cursor_pos, visible, attributes):
+        print 'update---->',text
         pass
 
     def ibus_commit_text_cb(self, id_no, text):
         if status.view is not None:
             status.view.run_command('ibus_insert', {"text": text})
             command.set_cursor_location()
+            
+            print 'we commit -->', text
             status.input= False
 
     def ibus_hide_preedit_text_cb(self, id_no):
@@ -352,19 +360,27 @@ class IBusCallback(object):
     def ibus_process_key_event_cb(self, id_no, handled):
         
         # handled=0
+        print '-'*50
         print 'in ibus_process_key_event_cb',id_no,handled
         # here if the ibus window is not visible, # and we typled arrow or del keys, we set handled to 0
         # settings = sublime.load_settings('SublimeIBusFallBackCommand.sublime-settings')
         # cmd = settings.get(status.key)
+        
         print 'command:',command
         print 'window id:', command.window_layout.window_id
         print 'visible:',command.window_layout.view
         print 'status.input:',status.input
         print 'status.key:',status.key
         
-        if not status.input and status.key in range(65,91)+range(97,123):
-            print 'my hack is on'
+        if not status.input and status.key in status.nav_key:
+            print 'my hack is on',status.key
             handled =0
+            
+        elif not status.input and status.key in status.edit_key:
+            print 'edit key'
+            handled =0
+        
+         # or  status.key in status.edit_key
         
         if handled == 0:
             settings = sublime.load_settings('SublimeIBusFallBackCommand.sublime-settings')
