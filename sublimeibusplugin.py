@@ -39,9 +39,12 @@ class IBusStatus(object):
         self.view = None
         self._id_no = -1
         self.input= True
-        self.input_key = range(65,91)+range(97,123)
-        self.nav_key = ["home","left","up","right","down"]
+        self.input_key_sym = range(65,91)+range(97,123)
+        self.input_key_upper_sym = range(65,91)
+        self.nav_key = ["home","left","up","right","down","pageup","pagedown","home","end"]
         self.edit_key = ["enter","backspace","tab","linefeed","clear","return","pause","escape","delete"]
+        # self.edit_key = ["enter","backspace","tab","linefeed","clear","return","pause","escape","delete"]
+        # self.edit_key = ["backspace","tab","clear","pause","escape","delete"]
 
     def id_no():
         def fget(self):
@@ -96,9 +99,9 @@ class IBusCommand(object):
         
         # set self.input to true if a char is typed
         print 'in process_key',status.id_no, keysym
-        if keysym in status.input_key:
-        # if keysym<127:
+        if keysym in status.input_key_sym:
             status.input=True
+        # 1-5 space enter
         elif keysym in range(49,54)+[32]+[65293,65290]:
             status.input=False
         
@@ -303,6 +306,7 @@ class WindowLayout:
 
 class IBusCallback(object):
     def execute(self, command, args):
+        print('execute command ::::',command)
         if hasattr(self, command):
             cb = getattr(self, command)
             if isinstance(args, list):
@@ -312,6 +316,7 @@ class IBusCallback(object):
             else:
                 assert False
         else:
+            print('has no command : '+repr({command: args}))
             logger.debug('unknown command: ' + repr({command: args}))
 
     def error(self, message):
@@ -350,10 +355,10 @@ class IBusCallback(object):
         if status.view is not None:
             status.view.run_command('ibus_insert', {"text": text})
             command.set_cursor_location()
+            print('in ibus_commit_text_cb --->',text)
+            # if text:
+            # status.input= False
             
-            print 'we commit -->', text
-            status.input= False
-
     def ibus_hide_preedit_text_cb(self, id_no):
         pass
 
@@ -377,22 +382,39 @@ class IBusCallback(object):
             handled =0
             
         elif not status.input and status.key in status.edit_key:
-            print 'edit key'
-            handled =0
+            print 'edit key hack'
+            handled=0
+            
+        if len(status.key)==1 and ord(status.key) in status.input_key_upper_sym:
+            handled=0
+
+         
+        print ('handled:',handled)
         
          # or  status.key in status.edit_key
         
         if handled == 0:
             settings = sublime.load_settings('SublimeIBusFallBackCommand.sublime-settings')
             cmd = settings.get(status.key)
+            print ('try getting command',cmd)
             if cmd is not None:
                 status.view.run_command(cmd.get('command', None),
                                         cmd.get('args', None))
-                print 'handled==0, cmd is not non'
+                                        
+                                        
+                print ('fix enter status',status.input)
+                # if not status.input and status.key=="enter":
+                # if not status.input and status.key=="enter":
+                #     # and if it't not kanji,
+                #     if imcontexts[id_no].
+                    # status.view.run_command('left_delete')
+                    
+                print 'handled==0, cmd is not none'
                 print 'cmd',cmd,'|',cmd.get('command'),'|',cmd.get('args')
                  
             elif len(status.key) == 1:
                 self.ibus_commit_text_cb(id_no, status.key)
+            
 
     def ibus_forward_key_event_cb(self, id_no, keyval, modifiers, is_released):
         # Workaround for ibus-bogo as it uses fake backspaces instead of
@@ -403,6 +425,8 @@ class IBusCallback(object):
         # SublimeIBusKeyTable.sublime-settings.
         if keyval == 65288:  # backspace
             status.view.run_command('left_delete')
+            
+        print('ibus_forward_key_event_cb:'+keyval+' .............')
 
 
 class IbusToggleCommand(sublime_plugin.TextCommand):

@@ -93,6 +93,11 @@ import json
 import ibus
 from ibus import modifier
 
+# import logging
+# logger = logging.getLogger('xxx')
+# fh = logging.FileHandler('/home/jihan/.config/sublime-text-2/Packages/SublimeIBus/sublimeibus/ibus2.log')
+# fh.setLevel(logging.DEBUG)
+# logger.addHandler(fh)
 
 def printj(dic):
     print(json.dumps(dic))
@@ -306,6 +311,7 @@ class IBusELInputContext(ibus.InputContext):
         self.connect('cursor-down-lookup-table', cursor_down_lookup_table_cb)
         self.connect('enabled', enabled_cb)
         self.connect('disabled', disabled_cb)
+        
         try:
             self.connect('forward-key-event', forward_key_event_cb)
         except TypeError:
@@ -320,7 +326,6 @@ class IBusELInputContext(ibus.InputContext):
 ########################################################################
 
 def commit_text_cb(ic, text):
-    print('yeah')
     print_command('ibus_commit_text_cb',
         ic.id_no, text.text.encode("utf-8"))
 
@@ -334,9 +339,11 @@ def update_preedit_text_cb(ic, text, cursor_pos, visible):
         print_command('ibus_update_preedit_text_cb',
             ic.id_no, text.text.encode("utf-8"),
             cursor_pos, visible, ' '.join(attrs))
+        
     ic.preediting = preediting
 
 def show_preedit_text_cb(ic):
+    print('in show_preedit_text_cb: ic.id_no=',ic.id_no)
     print_command('ibus_show_preedit_text_cb', ic.id_no)
 
 def hide_preedit_text_cb(ic):
@@ -413,6 +420,7 @@ IBUS_CAP_SURROUNDING_TEXT   = 1 << 5
 
 def create_imcontext():
     ic = IBusELInputContext(bus)
+    ic.editing=True
     try:
         ic.id_no = imcontexts.index(None)
         imcontexts[ic.id_no] = ic
@@ -442,6 +450,8 @@ def process_key_event(id_no, keyval, modmask, backslash, pressed = None):
                                 - display.display.info.min_keycode + 1))
 
     def reply(id_no, handled):
+        # editing = len()
+        # imcontexts[id_no].editing  how do i know current input status 
         print_command('ibus_process_key_event_cb', id_no, handled)
         return False
 
@@ -501,6 +511,7 @@ def focus_in(id_no):
 
 def focus_out(id_no):
     imcontexts[id_no].focus_out()
+    imcontexts[id_no].editing=False
     print('{}')  # Dummy response
 
 def reset(id_no):
