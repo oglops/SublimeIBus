@@ -162,6 +162,7 @@ class WindowLayout:
         layout = window.get_layout()
         cols = len(layout['cols']) - 1
         g2d = self.make_list2d(self.get_group_list(window), cols)
+        # view could be none 
         cursor = view.text_to_layout(view.sel()[0].a)
         viewport = view.viewport_position()
         all_views_width = sum(self.calc_group_offset_width(g2d, cols))
