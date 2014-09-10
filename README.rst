@@ -3,7 +3,7 @@ SublimeIBus
 ===========
 (English below)
 
-这个和原版不同之处在于加了几个是否正在输入中的判断，从而使得在输入完后可以用箭头键和delete/backspace/enter等上下移动，但由于lz科技实力限制，在输入字符后如果回车让英语字符上屏的话，会多输入一个\n,求大神指点，如下图所示
+这个和原版不同之处在于加了几个是否正在输入中的判断，从而使得在输入完后可以用箭头键和delete/backspace/enter等上下移动，但由于lz科技实力限制，在输入字符后如果回车让英语字符上屏的话，会多输入一个\\n,求大神指点，如下图所示
 
  .. image:: http://zippy.gfycat.com/HeartfeltEnlightenedGentoopenguin.gif
    :align: left
