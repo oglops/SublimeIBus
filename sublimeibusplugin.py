@@ -96,15 +96,12 @@ class IBusCommand(object):
             self.push('disable(%d)' % status.id_no)
 
     def process_key(self, keysym):
-        
         # set self.input to true if a char is typed
-        print 'in process_key',status.id_no, keysym
         if keysym in status.input_key_sym:
             status.input=True
         # 1-5 space enter
         elif keysym in range(49,54)+[32]+[65293,65290]:
             status.input=False
-        
         
         self.push('process_key_event(%d, %d, 0, None, None)' %
                   (status.id_no, keysym))
@@ -162,6 +159,7 @@ class WindowLayout:
         layout = window.get_layout()
         cols = len(layout['cols']) - 1
         g2d = self.make_list2d(self.get_group_list(window), cols)
+        # view could be none 
         cursor = view.text_to_layout(view.sel()[0].a)
         viewport = view.viewport_position()
         all_views_width = sum(self.calc_group_offset_width(g2d, cols))
@@ -306,7 +304,6 @@ class WindowLayout:
 
 class IBusCallback(object):
     def execute(self, command, args):
-        print('execute command ::::',command)
         if hasattr(self, command):
             cb = getattr(self, command)
             if isinstance(args, list):
@@ -316,7 +313,6 @@ class IBusCallback(object):
             else:
                 assert False
         else:
-            print('has no command : '+repr({command: args}))
             logger.debug('unknown command: ' + repr({command: args}))
 
     def error(self, message):
@@ -355,63 +351,27 @@ class IBusCallback(object):
         if status.view is not None:
             status.view.run_command('ibus_insert', {"text": text})
             command.set_cursor_location()
-            print('in ibus_commit_text_cb --->',text)
-            # if text:
-            # status.input= False
             
     def ibus_hide_preedit_text_cb(self, id_no):
         pass
 
     def ibus_process_key_event_cb(self, id_no, handled):
         
-        # handled=0
-        print '-'*50
-        print 'in ibus_process_key_event_cb',id_no,handled
-        # here if the ibus window is not visible, # and we typled arrow or del keys, we set handled to 0
-        # settings = sublime.load_settings('SublimeIBusFallBackCommand.sublime-settings')
-        # cmd = settings.get(status.key)
-        
-        print 'command:',command
-        print 'window id:', command.window_layout.window_id
-        print 'visible:',command.window_layout.view
-        print 'status.input:',status.input
-        print 'status.key:',status.key
-        
         if not status.input and status.key in status.nav_key:
-            print 'my hack is on',status.key
             handled =0
             
         elif not status.input and status.key in status.edit_key:
-            print 'edit key hack'
             handled=0
             
         if len(status.key)==1 and ord(status.key) in status.input_key_upper_sym:
             handled=0
-
          
-        print ('handled:',handled)
-        
-         # or  status.key in status.edit_key
-        
         if handled == 0:
             settings = sublime.load_settings('SublimeIBusFallBackCommand.sublime-settings')
             cmd = settings.get(status.key)
-            print ('try getting command',cmd)
             if cmd is not None:
                 status.view.run_command(cmd.get('command', None),
                                         cmd.get('args', None))
-                                        
-                                        
-                print ('fix enter status',status.input)
-                # if not status.input and status.key=="enter":
-                # if not status.input and status.key=="enter":
-                #     # and if it't not kanji,
-                #     if imcontexts[id_no].
-                    # status.view.run_command('left_delete')
-                    
-                print 'handled==0, cmd is not none'
-                print 'cmd',cmd,'|',cmd.get('command'),'|',cmd.get('args')
-                 
             elif len(status.key) == 1:
                 self.ibus_commit_text_cb(id_no, status.key)
             
@@ -425,9 +385,6 @@ class IBusCallback(object):
         # SublimeIBusKeyTable.sublime-settings.
         if keyval == 65288:  # backspace
             status.view.run_command('left_delete')
-            
-        print('ibus_forward_key_event_cb:'+keyval+' .............')
-
 
 class IbusToggleCommand(sublime_plugin.TextCommand):
     def run(self, edit):
